@@ -111,9 +111,47 @@ public partial class ServerForm : Form
         if (sender is not TableTile tile) return;
         DiningTable t = tile.Table;
 
-        // Step 6 will open the order screen here
-        MessageBox.Show($"Table {t.TableNumber} selected ({t.Status}).\n\nThe order screen comes in Step 6.",
-            Theme.RestaurantName);
+        refreshTimer.Stop();
+        try
+        {
+            if (t.ActiveOrderID == null)
+            {
+                // No open order: take a new order
+                using var form = new OrderForm(t);
+                form.ShowDialog(this);
+            }
+            else if (t.ActiveOrderStatus == "Ready")
+            {
+                // Food is ready: serve it and free the table
+                var answer = MessageBox.Show(
+                    $"Order #{t.ActiveOrderID} for Table {t.TableNumber} is ready.\n\n" +
+                    "Serve it and close the order? The table will become available.",
+                    "Serve order", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+                if (answer == DialogResult.Yes)
+                    OrderRepo.UpdateStatus(t.ActiveOrderID.Value, "Completed");
+            }
+            else
+            {
+                // Kitchen is still working: show what was ordered
+                var lines = OrderRepo.GetLines(t.ActiveOrderID.Value);
+                string items = string.Join("\n", lines.Select(l => $"   {l.Quantity} x {l.Name}"));
+                string status = t.ActiveOrderStatus == "Preparing" ? "being prepared" : "waiting for the kitchen";
+
+                MessageBox.Show($"Order #{t.ActiveOrderID} is {status} ({Gfx.Ago(t.ActiveOrderTime)}).\n\n{items}",
+                    $"Table {t.TableNumber}", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Something went wrong:\n\n" + ex.Message, "Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            LoadTables();
+            refreshTimer.Start();
+        }
     }
 
     private void refreshTimer_Tick(object? sender, EventArgs e) => LoadTables();

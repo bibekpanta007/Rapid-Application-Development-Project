@@ -30,8 +30,13 @@ internal static class Program
 
             Session.CurrentUser = login.LoggedInUser;
 
-            // Placeholder until we build each role's screen
-            using Form main = new Form1();
+            // Each role gets its own screen (Kitchen and Manager come in Steps 7-8)
+            using Form main = Session.CurrentUser!.Role switch
+            {
+                "Server" => new ServerForm(),
+                _ => new Form1()
+            };
+
             if (main.ShowDialog() != DialogResult.Retry) break;   // Retry = logged out
             Session.CurrentUser = null;
         }

@@ -30,10 +30,11 @@ internal static class Program
 
             Session.CurrentUser = login.LoggedInUser;
 
-            // Each role gets its own screen (Kitchen and Manager come in Steps 7-8)
+            // Each role gets its own screen (Manager comes in Step 8)
             using Form main = Session.CurrentUser!.Role switch
             {
                 "Server" => new ServerForm(),
+                "Cook" => new KitchenForm(),
                 _ => new Form1()
             };
 

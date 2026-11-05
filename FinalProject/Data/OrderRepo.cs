@@ -108,8 +108,9 @@ public static class OrderRepo
             cmd.ExecuteNonQuery();
         }
 
-        // When an order is finished, the table is free again
-        if (newStatus is "Completed" or "Cancelled")
+        // Only a cancelled order frees the table right away.
+        // A served (Completed) order keeps the table Occupied until the server clears it.
+        if (newStatus == "Cancelled")
         {
             using var cmd = conn.CreateCommand();
             cmd.Transaction = tx;

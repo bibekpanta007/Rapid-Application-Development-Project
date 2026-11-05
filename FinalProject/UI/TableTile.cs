@@ -81,5 +81,11 @@ public class TableTile : Control
             string info = $"Order #{_table.ActiveOrderID}  ·  {Gfx.Ago(_table.ActiveOrderTime)}";
             TextRenderer.DrawText(g, info, Theme.Small, new Point(14, 92), Theme.TextMuted, Gfx.Flags);
         }
+        else if (_table.Status == "Occupied")
+        {
+            // Food served, guests still eating
+            TextRenderer.DrawText(g, "Served · guests dining", Theme.Small,
+                new Point(14, 92), Theme.TextMuted, Gfx.Flags);
+        }
     }
 }

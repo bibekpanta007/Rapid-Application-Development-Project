@@ -114,18 +114,44 @@ public partial class ServerForm : Form
         refreshTimer.Stop();
         try
         {
-            if (t.ActiveOrderID == null)
+            if (t.ActiveOrderID == null && t.Status == "Occupied")
             {
-                // No open order: take a new order
+                // Food already served, guests still at the table
+                var btnNewOrder = new TaskDialogButton("New order");
+                var btnClear = new TaskDialogButton("Clear table");
+                var page = new TaskDialogPage
+                {
+                    Caption = Theme.RestaurantName,
+                    Heading = $"Table {t.TableNumber}",
+                    Text = "The guests have been served.\n\n" +
+                           "Take another order (drinks, dessert), or clear the table once the guests have left?",
+                    Icon = TaskDialogIcon.Information,
+                    Buttons = { btnNewOrder, btnClear, TaskDialogButton.Cancel }
+                };
+
+                TaskDialogButton result = TaskDialog.ShowDialog(this, page);
+                if (result == btnNewOrder)
+                {
+                    using var form = new OrderForm(t);
+                    form.ShowDialog(this);
+                }
+                else if (result == btnClear)
+                {
+                    TableRepo.SetStatus(t.TableID, "Available");
+                }
+            }
+            else if (t.ActiveOrderID == null)
+            {
+                // Empty or reserved table: seat the guests and take their order
                 using var form = new OrderForm(t);
                 form.ShowDialog(this);
             }
             else if (t.ActiveOrderStatus == "Ready")
             {
-                // Food is ready: serve it and free the table
+                // Food is ready: serve it (table stays occupied while guests eat)
                 var answer = MessageBox.Show(
                     $"Order #{t.ActiveOrderID} for Table {t.TableNumber} is ready.\n\n" +
-                    "Serve it and close the order? The table will become available.",
+                    "Mark it as served?",
                     "Serve order", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
                 if (answer == DialogResult.Yes)
